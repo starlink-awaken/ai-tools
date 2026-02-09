@@ -1,0 +1,142 @@
+version: 1.0.0
+tools:
+- name: openai
+  display_name: OpenAI CLI
+  description: OpenAI 官方命令行工具，用于访问 GPT-4、GPT-3.5 等模型
+  category: ai
+  url: https://github.com/openai/openai-cli
+  install:
+    command: pip install openai
+    verify: openai --version
+    requires:
+    - python
+    - pip
+  config:
+    env:
+    - name: OPENAI_API_KEY
+      description: OpenAI API 密钥
+      required: true
+      help: 在 https://platform.openai.com/api-keys 获取
+  commands:
+  - name: chat
+    description: 启动交互式聊天会话
+    syntax: openai api chat.completions.create -m gpt-4 -g 'user' '{prompt}'
+  - name: complete
+    description: 文本补全
+    syntax: openai api completions.create -m gpt-3.5-turbo-instruct -p '{prompt}'
+- name: claude
+  display_name: Claude CLI
+  description: Anthropic Claude 命令行工具，访问 Claude 3 Opus/Sonnet/Haiku
+  category: ai
+  url: https://docs.anthropic.com/claude/reference/claude-on-the-cli
+  install:
+    command: npm install -g @anthropic-ai/claude-cli
+    verify: claude --version
+    requires:
+    - node
+    - npm
+  config:
+    env:
+    - name: ANTHROPIC_API_KEY
+      description: Anthropic API 密钥
+      required: true
+      help: 在 https://console.anthropic.com/settings/keys 获取
+  commands:
+  - name: ask
+    description: 向 Claude 提问
+    syntax: claude ask '{prompt}'
+  - name: chat
+    description: 启动交互式聊天
+    syntax: claude chat
+- name: ollama
+  display_name: Ollama
+  description: 本地运行大语言模型，支持 Llama、Mistral 等
+  category: local
+  url: https://ollama.ai
+  install:
+    command: "if [[ \"$OSTYPE\" == \"darwin\"* ]]; then\n  brew install ollama\nelse\n\
+      \  curl -fsSL https://ollama.com/install.sh | sh\nfi\n"
+    verify: ollama --version
+    requires: []
+  config:
+    env:
+    - name: OLLAMA_HOST
+      description: Ollama 服务地址
+      required: false
+      default: http://localhost:11434
+  commands:
+  - name: run
+    description: 运行指定模型
+    syntax: ollama run {model}
+  - name: pull
+    description: 下载模型
+    syntax: ollama pull {model}
+  - name: list
+    description: 列出已安装模型
+    syntax: ollama list
+- name: fabric
+  display_name: Fabric
+  description: AI 工作流工具，提供预设的 AI 模式用于文本处理
+  category: workflow
+  url: https://github.com/danielmiessler/fabric
+  install:
+    command: "if [[ \"$OSTYPE\" == \"darwin\"* ]]; then\n  brew install fabric\nelse\n\
+      \  pip install fabric\nfi\n"
+    verify: fabric --version
+    requires:
+    - python
+    - pip
+  config:
+    env:
+    - name: OPENAI_API_KEY
+      description: OpenAI API 密钥（用于 Fabric 后端）
+      required: true
+    - name: FABRIC_CONFIG_PATH
+      description: Fabric 配置目录
+      required: false
+      default: ~/.config/fabric
+  commands:
+  - name: summarize
+    description: 总结文本
+    syntax: fabric --pattern summarize --input '{input}'
+  - name: extract
+    description: 提取关键信息
+    syntax: fabric --pattern extract_wisdom --input '{input}'
+- name: aider
+  display_name: Aider
+  description: AI 代码助手，自动编辑 Git 仓库中的代码
+  category: coding
+  url: https://github.com/paul-gauthier/aider
+  install:
+    command: pip install aider-chat
+    verify: aider --version
+    requires:
+    - python
+    - pip
+    - git
+  config:
+    env:
+    - name: OPENAI_API_KEY
+      description: OpenAI API 密钥
+      required: true
+    - name: ANTHROPIC_API_KEY
+      description: Anthropic API 密钥（可选）
+      required: false
+    settings:
+    - name: model
+      description: 默认模型
+      default: gpt-4
+      options:
+      - gpt-4
+      - claude-3-opus-20240229
+      - gpt-3.5-turbo
+  commands:
+  - name: commit
+    description: AI 生成 Git 提交信息
+    syntax: aider --commit
+  - name: edit
+    description: AI 编辑代码
+    syntax: aider --message '{instruction}'
+  # --------------------------------------------------------------------------
+  # 工具: Test Tool
+  # --------------------------------------------------------------------------

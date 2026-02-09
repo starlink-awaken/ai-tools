@@ -1,0 +1,322 @@
+# ==============================================================================
+# AI CLI Tools - Routing Rules Configuration
+# ==============================================================================
+# 版本: 2.0.0
+# 说明: 定义工具路由规则，基于关键词、能力、类别等匹配
+# ==============================================================================
+
+version: "2.0.0"
+
+# ==============================================================================
+# 全局配置
+# ==============================================================================
+global:
+  # 默认降级工具
+  default_fallback: "claude"
+
+  # 评分权重
+  scoring:
+    priority_base: 1.0        # 优先级基础权重
+    capability_match: 10      # 能力匹配加分
+    installed_bonus: 20       # 已安装加分
+    free_tier_bonus: 15       # 免费工具加分
+    low_latency_bonus: 10     # 低延迟加分
+
+  # 工具元数据
+  tools_metadata:
+    claude:
+      capabilities: ["chat", "code", "analysis", "writing"]
+      cost: "paid"
+      latency: "medium"
+      category: "ai"
+    openai:
+      capabilities: ["chat", "code", "analysis", "writing"]
+      cost: "paid"
+      latency: "medium"
+      category: "ai"
+    ollama:
+      capabilities: ["chat", "code", "analysis"]
+      cost: "free"
+      latency: "low"
+      category: "local"
+    fabric:
+      capabilities: ["text_processing", "summarization", "extraction"]
+      cost: "free"
+      latency: "medium"
+      category: "workflow"
+    aider:
+      capabilities: ["code", "git", "refactoring"]
+      cost: "free"
+      latency: "medium"
+      category: "coding"
+
+# ==============================================================================
+# 路由规则
+# ==============================================================================
+rules:
+  # --------------------------------------------------------------------------
+  # 规则 1: 文本处理规则
+  # --------------------------------------------------------------------------
+  - id: "text-processing"
+    name: "文本处理"
+    priority: 700
+    enabled: true
+
+    when:
+      keywords:
+        - "总结"
+        - "summarize"
+        - "summary"
+        - "提取"
+        - "extract"
+        - "wisdom"
+        - "分析"
+        - "analyze"
+      capabilities: ["text_processing", "summarization", "extraction"]
+      categories: ["workflow"]
+
+    match:
+      type: "keyword_or_capability"
+      operator: "or"
+
+    recommend:
+      tools: ["fabric"]
+      fallback: "claude"
+      reason_template: "这是一个文本处理任务，{tool_name} 提供了专业的 AI 模式"
+
+    command_template:
+      fabric: "fabric --pattern {pattern} --input '{task}'"
+      claude: "claude ask '{task}'"
+
+    pattern_mapping:
+      summarize: "summarize"
+      summary: "summarize"
+      提取: "extract_wisdom"
+      extract: "extract_wisdom"
+      分析: "analyze"
+      analyze: "analyze"
+      default: "summarize"
+
+  # --------------------------------------------------------------------------
+  # 规则 2: 代码编辑规则
+  # --------------------------------------------------------------------------
+  - id: "code-editing"
+    name: "代码编辑"
+    priority: 800
+    enabled: true
+
+    when:
+      keywords:
+        - "代码"
+        - "code"
+        - "git"
+        - "commit"
+        - "refactor"
+        - "fix bug"
+        - "debug"
+        - "edit code"
+        - "重构"
+      capabilities: ["code", "git", "refactoring"]
+      categories: ["coding"]
+
+    match:
+      type: "keyword_or_capability"
+      operator: "or"
+
+    recommend:
+      tools: ["aider"]
+      fallback: "claude"
+      reason_template: "这是一个代码编辑任务，{tool_name} 专门用于 AI 辅助代码开发"
+
+    command_template:
+      aider: "aider --message '{task}'"
+      claude: "claude ask '{task}'"
+
+  # --------------------------------------------------------------------------
+  # 规则 3: 本地/离线规则
+  # --------------------------------------------------------------------------
+  - id: "local-privacy"
+    name: "本地隐私"
+    priority: 900
+    enabled: true
+
+    when:
+      keywords:
+        - "本地"
+        - "离线"
+        - "隐私"
+        - "private"
+        - "local"
+        - "offline"
+        - "隐私保护"
+        - "数据不出域"
+
+    match:
+      type: "keyword"
+      operator: "or"
+
+    recommend:
+      tools: ["ollama"]
+      fallback: null
+      reason_template: "您要求本地运行，{tool_name} 在您的机器上运行模型，完全离线且隐私安全"
+
+    command_template:
+      ollama: "ollama run llama2 '{task}'"
+
+  # --------------------------------------------------------------------------
+  # 规则 4: 显式工具指定规则
+  # --------------------------------------------------------------------------
+  - id: "explicit-tool"
+    name: "显式工具指定"
+    priority: 1000
+    enabled: true
+
+    when:
+      keywords:
+        - "claude"
+        - "anthropic"
+        - "gpt"
+        - "openai"
+        - "ollama"
+        - "fabric"
+        - "aider"
+
+    match:
+      type: "keyword_exact"
+      operator: "exact"
+
+    tool_mapping:
+      claude: "claude"
+      anthropic: "claude"
+      gpt: "openai"
+      openai: "openai"
+      ollama: "ollama"
+      fabric: "fabric"
+      aider: "aider"
+
+    recommend:
+      tools: ["auto_detect"]
+      fallback: null
+      reason_template: "您明确指定了 {tool_name}"
+
+    command_template:
+      claude: "claude ask '{task}'"
+      openai: "openai api chat.completions.create -m gpt-4 -g 'user' '{task}'"
+      ollama: "ollama run llama2 '{task}'"
+      fabric: "fabric --pattern summarize --input '{task}'"
+      aider: "aider --message '{task}'"
+
+  # --------------------------------------------------------------------------
+  # 规则 5: 通用聊天规则
+  # --------------------------------------------------------------------------
+  - id: "general-chat"
+    name: "通用聊天"
+    priority: 100
+    enabled: true
+
+    when:
+      keywords: []
+      capabilities: ["chat", "code", "analysis", "writing"]
+
+    match:
+      type: "any"
+      operator: "or"
+
+    recommend:
+      tools: ["claude", "ollama", "openai"]
+      fallback: "claude"
+      reason_template: "这是一个通用任务，{tool_name} 可以很好地处理"
+
+    command_template:
+      claude: "claude ask '{task}'"
+      ollama: "ollama run llama2 '{task}'"
+      openai: "openai api chat.completions.create -m gpt-4 -g 'user' '{task}'"
+
+  # --------------------------------------------------------------------------
+  # 规则 6: 翻译任务规则
+  # --------------------------------------------------------------------------
+  - id: "translation"
+    name: "翻译"
+    priority: 750
+    enabled: true
+
+    when:
+      keywords:
+        - "翻译"
+        - "translate"
+        - "translation"
+        - "中译英"
+        - "英译中"
+
+    match:
+      type: "keyword"
+      operator: "or"
+
+    recommend:
+      tools: ["claude", "openai"]
+      fallback: "ollama"
+      reason_template: "这是一个翻译任务，{tool_name} 在多语言处理方面表现出色"
+
+    command_template:
+      claude: "claude ask 'Please translate: {task}'"
+      openai: "openai api chat.completions.create -m gpt-4 -g 'user' 'Translate: {task}'"
+      ollama: "ollama run llama2 'Translate: {task}'"
+
+  # --------------------------------------------------------------------------
+  # 规则 7: 代码生成规则
+  # --------------------------------------------------------------------------
+  - id: "code-generation"
+    name: "代码生成"
+    priority: 850
+    enabled: true
+
+    when:
+      keywords:
+        - "生成代码"
+        - "generate code"
+        - "write code"
+        - "写代码"
+        - "create function"
+        - "实现功能"
+
+    match:
+      type: "keyword"
+      operator: "or"
+
+    recommend:
+      tools: ["aider", "claude"]
+      fallback: "claude"
+      reason_template: "这是一个代码生成任务，{tool_name} 擅长编写高质量代码"
+
+    command_template:
+      aider: "aider --message '{task}'"
+      claude: "claude ask '{task}'"
+
+  # --------------------------------------------------------------------------
+  # 规则 8: API/命令帮助规则
+  # --------------------------------------------------------------------------
+  - id: "api-help"
+    name: "API帮助"
+    priority: 950
+    enabled: true
+
+    when:
+      keywords:
+        - "如何使用"
+        - "how to use"
+        - "帮助"
+        - "help"
+        - "用法"
+        - "usage"
+
+    match:
+      type: "keyword"
+      operator: "or"
+
+    recommend:
+      tools: ["claude"]
+      fallback: null
+      reason_template: "{tool_name} 擅长提供清晰的使用说明和帮助文档"
+
+    command_template:
+      claude: "claude ask '{task}'"

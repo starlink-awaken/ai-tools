@@ -1,0 +1,146 @@
+# AI CLI Tools Manager - .gitignore
+
+# Dependencies
+node_modules/
+vendor/
+.bundle/
+.pip-cache/
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+*.bak
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*.orig
+*.rej
+
+# Test artifacts
+coverage/
+.nyc_output/
+test-results/
+
+# Config (user-specific)
+config/local.yaml
+config/user.yaml
+
+# Data (user-specific)
+data/history.json
+data/stats.json
+
+# Bash completion
+*.bash
+*.zsh
+
+# Claude Code artifacts
+.claude/
+CLAUDE.md
+
+# IDE settings
+.vscode/settings.json
+.idea/workspace.xml
+
+# Project-specific
+*.sublime-*
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS
+.DS_Store
+*.appleDouble
+.LSOverride
+
+# Linux
+*~
+\#*\#
+ Ethel
+.trash
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Node.js
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+package-lock.json
+yarn-error.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# macOS
+.DS_Store
+
+# Project
+*.log
+.temp/
+.temp/*
