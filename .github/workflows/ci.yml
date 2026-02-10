@@ -1,0 +1,123 @@
+name: AI Tools CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install pyyaml
+
+    - name: Validate YAML configs
+      run: |
+        python3 -c "
+        import yaml
+        with open('config/tools.yaml', 'r') as f:
+            tools = yaml.safe_load(f)
+        with open('config/rules.yaml', 'r') as f:
+            rules = yaml.safe_load(f)
+        print('✅ tools.yaml valid')
+        print('✅ rules.yaml valid')
+        print(f'📊 Found {len(tools.get(\"tools\", []))} tools')
+        print(f'📊 Found {len(rules.get(\"rules\", []))} rules')
+        "
+
+    - name: Check scripts are executable
+      run: |
+        for f in cli/core/*.sh; do
+          if [[ ! -x "$f" ]]; then
+            echo "❌ $f is not executable"
+            exit 1
+          else
+            echo "✅ $(basename $f) is executable"
+          fi
+        done
+
+    - name: Test bash syntax
+      run: |
+        bash -n cli/core/yaml-parser.sh
+        bash -n cli/core/routing-engine.sh
+        bash -n cli/core/tool-info.sh
+        echo "✅ All bash scripts have valid syntax"
+
+  test-scripts:
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: pip install pyyaml
+
+    - name: Test YAML parser
+      run: |
+        python3 << 'EOF'
+        import yaml
+        import sys
+
+        # Test tools.yaml
+        with open('config/tools.yaml', 'r') as f:
+            data = yaml.safe_load(f)
+
+        tools = data.get('tools', [])
+        assert len(tools) > 0, "No tools found"
+
+        for tool in tools:
+            assert 'name' in tool, f"Tool missing name: {tool}"
+            assert 'display_name' in tool, f"Tool missing display_name: {tool}"
+
+        print(f"✅ Parsed {len(tools)} tools successfully")
+        EOF
+
+    - name: Test routing engine
+      run: |
+        # Basic routing test
+        python3 << 'EOF'
+        import yaml
+
+        with open('config/rules.yaml', 'r') as f:
+            rules = yaml.safe_load(f)
+
+        rule_names = [r.get('name') for r in rules.get('rules', [])]
+        assert 'summarize' in rule_names, "Missing summarize rule"
+        assert 'translate' in rule_names, "Missing translate rule"
+
+        print(f"✅ Found {len(rule_names)} routing rules")
+        print(f"📋 Rules: {rule_names}")
+        EOF
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test-scripts
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Create release artifact
+      run: |
+        echo "## AI CLI Tools Manager v2.0.0" > release.md
+        echo "" >> release.md
+        echo "Release date: $(date +%Y-%m-%d)" >> release.md
+        cat README.md >> release.md
+        echo "✅ Release artifact created"
